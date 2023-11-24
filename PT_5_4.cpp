@@ -1,25 +1,13 @@
-﻿#include <iostream>
+﻿#include <Windows.h>
+#include <iostream>
 #include <iomanip>
 #include <string>
-#include <list>
 
 const char MAX_LINE_LENGTH = 50;
 const char HASH_FUNCTION_COEFFITIENT = 31;
 const char INIT_TABLE_SIZE = 10;
 const char RESIZE_FACTOR = 2;
 
-
-bool isNumber(std::string value)
-{
-    for (size_t i = 0; i < value.size(); i++)
-    {
-        if (!isdigit(value[i]))
-        {
-            return false;
-        }
-    }
-    return true;
-}
 
 #pragma region LIST
 
@@ -243,17 +231,62 @@ public:
 
 #pragma endregion
 
-void clearConsole() 
+#pragma region UTILS
+HANDLE CONSOLE_HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+
+enum class ConsoleColor
+{
+    BLACK,
+    BLUE,
+    GREEN,
+    CYAN,
+    RED,
+    PURPLE,
+    YELLOW,
+    WHITE,
+    GREY,
+    LIGHT_BLUE,
+    LIGHT_GREEN,
+    LIGHT_CYAN,
+    LIGHT_RED,
+    LIGHT_PURPLE,
+    LIGHT_YELLOW,
+    BRIGHT_WHITE,
+};
+
+void clearConsole()
 {
     system("cls");
 }
 
+void print(std::string message, ConsoleColor color) 
+{
+    SetConsoleTextAttribute(CONSOLE_HANDLE, (int)color);
+    std::cout << message;
+    SetConsoleTextAttribute(CONSOLE_HANDLE, (int)ConsoleColor::WHITE);
+}
+
 void printHeader(const std::string& header)
 {
-    std::cout << "\n----------------------------\n\n";
-    std::cout << header;
-    std::cout << "\n----------------------------\n\n";
+    print("\n----------------------------\n\n", ConsoleColor::LIGHT_BLUE);
+    print(header, ConsoleColor::LIGHT_BLUE);
+    print("\n----------------------------\n\n", ConsoleColor::LIGHT_BLUE);
 }
+
+
+bool isNumber(std::string value)
+{
+    for (size_t i = 0; i < value.size(); i++)
+    {
+        if (!isdigit(value[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+#pragma endregion
+
 
 int main() {
     setlocale(LC_ALL, "RU");
@@ -269,7 +302,7 @@ int main() {
         clearConsole();
 
         printHeader(std::string("Меню:\n1. Добавить элемент\n2. Удалить элемент\n3. Вывести таблицу значений\n4. Выполнить рехэширование\n0. Выход\n"));
-        std::cout << "Выберите действие: ";
+        print("Выберите действие: ", ConsoleColor::LIGHT_YELLOW);
 
         std::cin >> input;
         if (isNumber(input))
@@ -302,11 +335,11 @@ int main() {
             std::getline(std::cin, key);
             if (hashTable.try_remove(key))
             {
-                std::cout << "Ключ \"" + key + "\" успешно удален\n";
+                print("Ключ \"" + key + "\" успешно удален\n", ConsoleColor::LIGHT_GREEN);
             }
             else
             {
-                std::cout << "Ключ \"" + key + "\" не найден\n";
+                print("Ключ \"" + key + "\" не найден\n", ConsoleColor::LIGHT_RED);
             }
             break;
 
@@ -326,11 +359,11 @@ int main() {
             if (input == "Y")
             {
                 hashTable.rehash();
-                std::cout << "Рехэширование было успешно выполнено";
+                print("Рехэширование было успешно выполнено", ConsoleColor::LIGHT_GREEN);
             }
             else
             {
-                std::cout << "Неправильный ввод. Рехэширование не было выполнено";
+                print("Неправильный ввод. Рехэширование не было выполнено", ConsoleColor::LIGHT_RED);
             }
 
             std::cin.get();
@@ -338,14 +371,15 @@ int main() {
 
         case 0:
             std::cout << "Выход из программы.\n";
+            exit(0);
             break;
 
         default:
-            std::cout << "Некорректный выбор. Попробуйте еще раз.\n";
+            print("Некорректный выбор. Попробуйте еще раз.\n", ConsoleColor::LIGHT_RED);
             std::cin.get();
         }
 
-        std::cout << "\nНажмите Enter для продолжения...";
+        print("\nНажмите Enter для продолжения...", ConsoleColor::LIGHT_CYAN);
         std::cin.get();
     } while (choice != 0);
 
