@@ -33,7 +33,7 @@ public:
         clear();
     }
 
-    void push_back(const T& data) 
+    void push(const T& data) 
     {
         Node<T>* newNode = new Node<T>(data);
         if (!head) 
@@ -139,22 +139,6 @@ typedef List<std::pair<std::string, std::string>> HashList;
 
 class HashTable 
 {
-private:
-    int tableSize = 10;
-    HashList* table;
-
-    size_t hashFunction(const std::string& input) 
-    {
-        size_t hashValue = 0;
-
-        for (char ch : input) 
-        {
-            hashValue = hashValue * 31 + ch;
-        }
-
-        return hashValue % tableSize;
-    }
-
 public:
     HashTable() : tableSize(INIT_TABLE_SIZE)
     {
@@ -172,7 +156,7 @@ public:
             for(const auto& entry : table[i])
             {
                 int rehash = hashFunction(entry.first);
-                newTable[rehash].push_back(entry);
+                newTable[rehash].push(entry);
             }
         }
 
@@ -184,7 +168,7 @@ public:
     void insert(const std::string& key, const std::string& value) 
     {
         int index = hashFunction(key);
-        table[index].push_back(std::make_pair(key, value));
+        table[index].push(std::make_pair(key, value));
     }
 
     std::string get(const std::string& key) 
@@ -200,7 +184,7 @@ public:
         return "Ключ не найден";
     }
 
-    bool try_remove(const std::string& key) 
+    bool tryRemove(const std::string& key) 
     {
         int index = hashFunction(key);
         List<std::pair<std::string, std::string>>& entries = table[index];
@@ -227,6 +211,23 @@ public:
             std::cout << std::endl;
         }
     }
+
+private:
+    int tableSize = 10;
+    HashList* table;
+
+    size_t hashFunction(const std::string& input)
+    {
+        size_t hashValue = 0;
+
+        for (char ch : input)
+        {
+            hashValue = hashValue * HASH_FUNCTION_COEFFITIENT + ch;
+        }
+
+        return hashValue % tableSize;
+    }
+
 };
 
 #pragma endregion
@@ -259,20 +260,25 @@ void clearConsole()
     system("cls");
 }
 
-void print(std::string message, ConsoleColor color) 
+void print(const std::string& message, ConsoleColor color)
 {
     SetConsoleTextAttribute(CONSOLE_HANDLE, (int)color);
     std::cout << message;
     SetConsoleTextAttribute(CONSOLE_HANDLE, (int)ConsoleColor::WHITE);
 }
 
-void printHeader(const std::string& header)
+void printHeader(const std::string& header, ConsoleColor color)
 {
-    print("\n----------------------------\n\n", ConsoleColor::LIGHT_BLUE);
-    print(header, ConsoleColor::LIGHT_BLUE);
-    print("\n----------------------------\n\n", ConsoleColor::LIGHT_BLUE);
+    print("\n----------------------------\n\n", color);
+    print(header, color);
+    print("\n----------------------------\n\n", color);
 }
 
+void printHeader(const std::string& header)
+{
+    printHeader(header, ConsoleColor::LIGHT_CYAN);
+
+}
 
 bool isNumber(std::string value)
 {
@@ -302,7 +308,7 @@ int main() {
         clearConsole();
 
         printHeader(std::string("Меню:\n1. Добавить элемент\n2. Удалить элемент\n3. Вывести таблицу значений\n4. Выполнить рехэширование\n0. Выход\n"));
-        print("Выберите действие: ", ConsoleColor::LIGHT_YELLOW);
+        print("Выберите действие: ", ConsoleColor::WHITE);
 
         std::cin >> input;
         if (isNumber(input))
@@ -318,22 +324,23 @@ int main() {
         {
         case 1:
             clearConsole();
-            printHeader("Добавление элемента\n");
+            printHeader("Добавление элемента\n", ConsoleColor::LIGHT_GREEN);
             std::cout << "Введите ключ: ";
             std::cin.get();
             std::getline(std::cin, key);
             std::cout << "Введите значение: ";
             std::getline(std::cin, value);
             hashTable.insert(key, value);
+            print("Элемент успешно добавлен", ConsoleColor::LIGHT_GREEN);
             break;
 
         case 2:
             clearConsole();
-            printHeader("Удаление элемента\n");
+            printHeader("Удаление элемента\n", ConsoleColor::LIGHT_RED);
             std::cout << "Введите ключ для удаления: ";
             std::cin.get();
             std::getline(std::cin, key);
-            if (hashTable.try_remove(key))
+            if (hashTable.tryRemove(key))
             {
                 print("Ключ \"" + key + "\" успешно удален\n", ConsoleColor::LIGHT_GREEN);
             }
@@ -352,7 +359,7 @@ int main() {
 
         case 4:
             clearConsole();
-            printHeader("Рехэширование таблицы\n");
+            printHeader("Рехэширование таблицы\n", ConsoleColor::LIGHT_YELLOW);
 
             std::cout << "Введите:\nY - выполнить рехэширование\n";
             std::cin >> input;
@@ -370,7 +377,7 @@ int main() {
             break;
 
         case 0:
-            std::cout << "Выход из программы.\n";
+            print("Выход из программы.\n", ConsoleColor::LIGHT_RED);
             exit(0);
             break;
 
