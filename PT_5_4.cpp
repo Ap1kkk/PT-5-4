@@ -1,10 +1,13 @@
 ﻿#include <iostream>
-#include <functional>
+#include <iomanip>
 #include <string>
 #include <list>
 
 const char MAX_LINE_LENGTH = 50;
 const char HASH_FUNCTION_COEFFITIENT = 31;
+const char INIT_TABLE_SIZE = 10;
+const char RESIZE_FACTOR = 2;
+
 
 bool isNumber(std::string value)
 {
@@ -21,7 +24,8 @@ bool isNumber(std::string value)
 #pragma region LIST
 
 template <typename T>
-struct Node {
+struct Node 
+{
     T data;
     Node* next;
 
@@ -29,123 +33,134 @@ struct Node {
 };
 
 template <typename T>
-class List {
+class List 
+{
 private:
     Node<T>* head;
 
 public:
-    // Конструктор
     List() : head(nullptr) {}
-
-    // Деструктор
-    ~List() {
+    ~List() 
+    {
         clear();
     }
 
-    // Добавление элемента в конец списка
-    void push_back(const T& data) {
+    void push_back(const T& data) 
+    {
         Node<T>* newNode = new Node<T>(data);
-        if (!head) {
+        if (!head) 
+        {
             head = newNode;
             return;
         }
 
         Node<T>* current = head;
-        while (current->next) {
+        while (current->next) 
+        {
             current = current->next;
         }
 
         current->next = newNode;
     }
 
-    // Очистка списка
-    void clear() {
-        while (head) {
+    void clear() 
+    {
+        while (head) 
+        {
             Node<T>* temp = head;
             head = head->next;
             delete temp;
         }
     }
 
-    // Удаление первого вхождения элемента из списка
-    void remove(const T& value) {
+    void remove(const T& value) 
+    {
         Node<T>* current = head;
         Node<T>* previous = nullptr;
 
-        while (current) {
-            if (current->data == value) {
-                // Удаляем элемент из списка
-                if (previous) {
+        while (current) 
+        {
+            if (current->data == value) 
+            {
+                if (previous) 
+                {
                     previous->next = current->next;
                     delete current;
                     return;
                 }
-                else {
-                    // Если удаляется первый элемент
+                else 
+                {
                     Node<T>* temp = head;
                     head = head->next;
                     delete temp;
                     return;
                 }
             }
-            else {
-                // Переходим к следующему элементу
+            else 
+            {
                 previous = current;
                 current = current->next;
             }
         }
     }
 
-    // Итератор для перебора элементов списка
-    class Iterator {
+    class Iterator 
+    {
     private:
         Node<T>* current;
 
     public:
         Iterator(Node<T>* start) : current(start) {}
 
-        // Переход к следующему элементу
-        Iterator& operator++() {
-            if (current) {
+        Iterator& operator++() 
+        {
+            if (current) 
+            {
                 current = current->next;
             }
             return *this;
         }
 
-        // Получение значения текущего элемента
-        T& operator*() {
+        T& operator*() 
+        {
             return current->data;
         }
 
-        // Проверка на равенство
-        bool operator!=(const Iterator& other) const {
+        bool operator!=(const Iterator& other) const 
+        {
             return current != other.current;
         }
     };
 
-    // Методы для работы с итератором
-    Iterator begin() {
+    Iterator begin() 
+    {
         return Iterator(head);
     }
 
-    Iterator end() {
+    Iterator end() 
+    {
         return Iterator(nullptr);
     }
 };
 
 #pragma endregion
 
+typedef List<std::pair<std::string, std::string>> HashList;
+
 #pragma region HASH_TABLE
 
-class HashTable {
+class HashTable 
+{
 private:
-    static const int tableSize = 10;
-    List<std::pair<std::string, std::string>> table[tableSize];
+    int tableSize = 10;
+    HashList* table;
 
-    size_t hashFunction(const std::string& input) {
+    size_t hashFunction(const std::string& input) 
+    {
         size_t hashValue = 0;
 
-        for (char ch : input) {
+        for (char ch : input) 
+        {
             hashValue = hashValue * 31 + ch;
         }
 
@@ -153,29 +168,58 @@ private:
     }
 
 public:
-    // Вставка элемента в хэш-таблицу
-    void insert(const std::string& key, const std::string& value) {
+    HashTable() : tableSize(INIT_TABLE_SIZE)
+    {
+        table = new HashList[tableSize];
+    }
+
+    void rehash() 
+    {
+        int newSize = tableSize * RESIZE_FACTOR + 1;
+
+        HashList* newTable = new HashList[newSize];
+
+        for (size_t i = 0; i < tableSize; i++)
+        {
+            for(const auto& entry : table[i])
+            {
+                int rehash = hashFunction(entry.first);
+                newTable[rehash].push_back(entry);
+            }
+        }
+
+        delete[] table;
+        table = std::move(newTable);
+        tableSize = newSize;
+    }
+
+    void insert(const std::string& key, const std::string& value) 
+    {
         int index = hashFunction(key);
         table[index].push_back(std::make_pair(key, value));
     }
 
-    // Получение значения по ключу из хэш-таблицы
-    std::string get(const std::string& key) {
+    std::string get(const std::string& key) 
+    {
         int index = hashFunction(key);
-        for (const auto& entry : table[index]) {
-            if (entry.first == key) {
+        for (const auto& entry : table[index])
+        {
+            if (entry.first == key) 
+            {
                 return entry.second;
             }
         }
         return "Ключ не найден";
     }
 
-    // Удаление элемента по ключу из хэш-таблицы
-    bool try_remove(const std::string& key) {
+    bool try_remove(const std::string& key) 
+    {
         int index = hashFunction(key);
         List<std::pair<std::string, std::string>>& entries = table[index];
-        for (const auto& entry : entries) {
-            if (entry.first == key) {
+        for (const auto& entry : entries) 
+        {
+            if (entry.first == key) 
+            {
                 entries.remove(entry);
                 return true;
             }
@@ -183,23 +227,24 @@ public:
         return false;
     }
 
-    // Вывод хэш-таблицы
-    void displayTable() {
-        for (int i = 0; i < tableSize; ++i) {
-            std::cout << "Список " << i << ": ";
-            for (const auto& entry : table[i]) {
+    void displayTable() 
+    {
+        for (int i = 0; i < tableSize; ++i) 
+        {
+            std::cout  << "Индекс " << std::setw(5) << i << ": ";
+            for (const auto& entry : table[i])
+            {
                 std::cout << "{" << entry.first << ": " << entry.second << "} ";
             }
             std::cout << std::endl;
         }
     }
-
 };
 
 #pragma endregion
 
-// Очистка экрана консоли
-void clearConsole() {
+void clearConsole() 
+{
     system("cls");
 }
 
@@ -213,16 +258,17 @@ void printHeader(const std::string& header)
 int main() {
     setlocale(LC_ALL, "RU");
 
-    HashTable myHashTable;
+    HashTable hashTable;
     int choice = -1;
     std::string input;
     std::string key;
     std::string value;
 
-    do {
+    do 
+    {
         clearConsole();
 
-        printHeader(std::string("Меню:\n1. Добавить элемент\n2. Удалить элемент\n3. Вывести таблицу значений\n0. Выход\n"));
+        printHeader(std::string("Меню:\n1. Добавить элемент\n2. Удалить элемент\n3. Вывести таблицу значений\n4. Выполнить рехэширование\n0. Выход\n"));
         std::cout << "Выберите действие: ";
 
         std::cin >> input;
@@ -235,7 +281,8 @@ int main() {
             choice = -1;
         }
 
-        switch (choice) {
+        switch (choice) 
+        {
         case 1:
             clearConsole();
             printHeader("Добавление элемента\n");
@@ -244,7 +291,7 @@ int main() {
             std::getline(std::cin, key);
             std::cout << "Введите значение: ";
             std::getline(std::cin, value);
-            myHashTable.insert(key, value);
+            hashTable.insert(key, value);
             break;
 
         case 2:
@@ -253,7 +300,7 @@ int main() {
             std::cout << "Введите ключ для удаления: ";
             std::cin.get();
             std::getline(std::cin, key);
-            if (myHashTable.try_remove(key))
+            if (hashTable.try_remove(key))
             {
                 std::cout << "Ключ \"" + key + "\" успешно удален\n";
             }
@@ -266,7 +313,27 @@ int main() {
         case 3:
             clearConsole();
             printHeader("Вывод таблицы значений\n");
-            myHashTable.displayTable();
+            hashTable.displayTable();
+            std::cin.get();
+            break;
+
+        case 4:
+            clearConsole();
+            printHeader("Рехэширование таблицы\n");
+
+            std::cout << "Введите:\nY - выполнить рехэширование\n";
+            std::cin >> input;
+            if (input == "Y")
+            {
+                hashTable.rehash();
+                std::cout << "Рехэширование было успешно выполнено";
+            }
+            else
+            {
+                std::cout << "Неправильный ввод. Рехэширование не было выполнено";
+            }
+
+            std::cin.get();
             break;
 
         case 0:
@@ -278,7 +345,6 @@ int main() {
             std::cin.get();
         }
 
-        // Ожидание ввода перед очисткой
         std::cout << "\nНажмите Enter для продолжения...";
         std::cin.get();
     } while (choice != 0);
